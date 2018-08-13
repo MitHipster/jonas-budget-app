@@ -14,12 +14,12 @@ const budgetController = (() => {
 
 	const data = {
 		items: {
-			exp: [],
-			inc: []
+			expenses: [],
+			income: []
 		},
 		totals: {
-			exp: 0,
-			inc: 0
+			expenses: 0,
+			income: 0
 		}
 	};
 
@@ -34,7 +34,7 @@ const budgetController = (() => {
 					.substr(2, 5)
 			).toUpperCase();
 			// Create a new item based on type
-			type === 'exp'
+			type === 'expenses'
 				? (newItem = new Expense(id, desc, value))
 				: (newItem = new Income(id, desc, value));
 
@@ -60,10 +60,29 @@ const UIController = (() => {
 	return {
 		getInput: () => {
 			return {
-				type: document.querySelector(elements.inputType).value, // Either 'inc' or 'exp'
+				type: document.querySelector(elements.inputType).value, // Either 'income' or 'expenses'
 				desc: document.querySelector(elements.inputDesc).value,
 				value: document.querySelector(elements.inputValue).value
 			};
+		},
+		addListItem: (item, type) => {
+			// Create HTML string for income / expense item
+			let html = `
+			<div class="item clearfix" id="${type}-${item.id}">
+				<div class="item__description">${item.desc}</div>
+				<div class="right clearfix">
+					<div class="item__value">${item.value}</div>
+					${type === 'expenses' ? '<div class="item__percentage">0%</div>' : ''}
+					<div class="item__delete">
+						<button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button>
+					</div>
+				</div>
+			</div>
+			`;
+			// Insert HTML into the DOM
+			document
+				.querySelector(`.${type}__list`)
+				.insertAdjacentHTML('beforeend', html);
 		},
 		getElements: () => {
 			return elements;
@@ -73,6 +92,16 @@ const UIController = (() => {
 
 // Serves as the controller of the application
 const controller = ((budgetCtrl, UICtrl) => {
+	const ctrlAddItem = () => {
+		// 1. Get field input value
+		const input = UICtrl.getInput();
+		// 2. Add item to the budget controller
+		const newItem = budgetCtrl.addItem(input.type, input.desc, input.value);
+		// 3. Add item to the UI
+		UICtrl.addListItem(newItem, input.type);
+		// 4. Recalculate the budget
+		// 5. Display the budget in the UI
+	};
 	const setupEventListeners = () => {
 		const UIElements = UICtrl.getElements();
 		document
@@ -85,16 +114,6 @@ const controller = ((budgetCtrl, UICtrl) => {
 				ctrlAddItem();
 			}
 		});
-	};
-
-	const ctrlAddItem = () => {
-		// 1. Get field input value
-		const input = UICtrl.getInput();
-		// 2. Add item to the budget controller
-		const newItem = budgetCtrl.addItem(input.type, input.desc, input.value);
-		// 3. Add the item to the UI
-		// 4. Recalculate the budget
-		// 5. Display the budget in the UI
 	};
 
 	return {
