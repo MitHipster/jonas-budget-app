@@ -86,6 +86,18 @@ const UIController = (() => {
 		},
 		getElements: () => {
 			return elements;
+		},
+		clearInputs: () => {
+			// Converted node list into an array to demonstrate using the call method on the Array prototype
+			const inputs = document.querySelectorAll(
+				elements.inputDesc + ', ' + elements.inputValue
+			);
+			const inputsArr = Array.prototype.slice.call(inputs);
+			inputsArr.forEach(input => {
+				input.value = '';
+			});
+			// Set focus on first input element
+			inputsArr[0].focus();
 		}
 	};
 })();
@@ -99,8 +111,10 @@ const controller = ((budgetCtrl, UICtrl) => {
 		const newItem = budgetCtrl.addItem(input.type, input.desc, input.value);
 		// 3. Add item to the UI
 		UICtrl.addListItem(newItem, input.type);
-		// 4. Recalculate the budget
-		// 5. Display the budget in the UI
+		// 4. Clear input fields
+		UICtrl.clearInputs();
+		// 5. Recalculate the budget
+		// 6. Display the budget in the UI
 	};
 	const setupEventListeners = () => {
 		const UIElements = UICtrl.getElements();
