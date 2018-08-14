@@ -48,6 +48,14 @@ const budgetController = (() => {
 			data.items[type].push(newItem);
 			return newItem;
 		},
+		deleteItem: attr => {
+			const type = attr.split('-')[0];
+			const id = attr.split('-')[1];
+			// The find method would be more efficient but it is less compatible
+			const removeIndex = data.items[type].map(item => item.id).indexOf(id);
+
+			data.items[type].splice(removeIndex, 1);
+		},
 		calculateBudget: () => {
 			// Calculate total income and expenses
 			calculateTotal('expenses');
@@ -87,7 +95,8 @@ const UIController = (() => {
 		budgetLbl: '.budget__value',
 		incomeLbl: '.budget__income--value',
 		expensesLbl: '.budget__expenses--value',
-		percentLbl: '.budget__expenses--percentage'
+		percentLbl: '.budget__expenses--percentage',
+		container: '.container'
 	};
 
 	return {
@@ -107,7 +116,10 @@ const UIController = (() => {
 					<div class="item__value">${item.value}</div>
 					${type === 'expenses' ? '<div class="item__percentage">0%</div>' : ''}
 					<div class="item__delete">
-						<button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button>
+						<button class="item__delete--btn">
+							<i class="ion-ios-close-outline" data-item="${type}-${item.id}">
+							</i>
+						</button>
 					</div>
 				</div>
 			</div>
@@ -129,6 +141,9 @@ const UIController = (() => {
 				percent.textContent = '---';
 			}
 		},
+		deleteListItem: id => {
+			document.getElementById(id).remove();
+		},
 		getElements: () => {
 			return elements;
 		},
@@ -149,6 +164,24 @@ const UIController = (() => {
 
 // Serves as the controller of the application
 const controller = ((budgetCtrl, UICtrl) => {
+	const setupEventListeners = () => {
+		const UIElements = UICtrl.getElements();
+		document
+			.querySelector(UIElements.inputBtn)
+			.addEventListener('click', ctrlAddItem);
+
+		document.addEventListener('keypress', e => {
+			// 'which' is used to support older browsers
+			if (e.keyCode === 13 || e.which === 13) {
+				ctrlAddItem();
+			}
+		});
+
+		document
+			.querySelector(UIElements.container)
+			.addEventListener('click', ctrlDeleteItem);
+	};
+
 	const updateBudget = () => {
 		// 1. Recalculate the budget
 		budgetCtrl.calculateBudget();
@@ -157,6 +190,7 @@ const controller = ((budgetCtrl, UICtrl) => {
 		// 3. Display the budget in the UI
 		UICtrl.displayBudget(budget);
 	};
+
 	const ctrlAddItem = () => {
 		// 1. Get field input value
 		const input = UICtrl.getInput();
@@ -175,18 +209,17 @@ const controller = ((budgetCtrl, UICtrl) => {
 		// 5. Calculate and update budget
 		updateBudget();
 	};
-	const setupEventListeners = () => {
-		const UIElements = UICtrl.getElements();
-		document
-			.querySelector(UIElements.inputBtn)
-			.addEventListener('click', ctrlAddItem);
 
-		document.addEventListener('keypress', e => {
-			// which is used to support older browsers
-			if (e.keyCode === 13 || e.which === 13) {
-				ctrlAddItem();
-			}
-		});
+	const ctrlDeleteItem = e => {
+		if (e.target && e.target.nodeName === 'I') {
+			// Get ID stored in a data attribute on the delete icon element
+			const attr = e.target.dataset.item;
+			// Delete node from the DOM
+			UICtrl.deleteListItem(attr);
+			// Delete item from budget array then recalculate and update budget
+			budgetCtrl.deleteItem(attr);
+			updateBudget();
+		}
 	};
 
 	return {
