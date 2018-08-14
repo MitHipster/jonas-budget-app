@@ -11,6 +11,10 @@ const budgetController = (() => {
 		this.desc = desc;
 		this.value = value;
 	};
+	const calculateTotal = type => {
+		let total = data.items[type].reduce((sum, item) => sum + item.value, 0);
+		data.totals[type] = total;
+	};
 
 	const data = {
 		items: {
@@ -20,7 +24,9 @@ const budgetController = (() => {
 		totals: {
 			expenses: 0,
 			income: 0
-		}
+		},
+		budget: 0,
+		percent: -1
 	};
 
 	return {
@@ -42,6 +48,29 @@ const budgetController = (() => {
 			data.items[type].push(newItem);
 			return newItem;
 		},
+		calculateBudget: () => {
+			// Calculate total income and expenses
+			calculateTotal('expenses');
+			calculateTotal('income');
+			// Calculate the budget: income - expenses
+			data.budget = data.totals.income - data.totals.expenses;
+			// Calculate the percentage of income spent
+			if (data.totals.income > 0) {
+				data.percent = Math.round(
+					(data.totals.expenses / data.totals.income) * 100
+				);
+			} else {
+				data.percent = -1;
+			}
+		},
+		getBudget: () => {
+			return {
+				budget: data.budget,
+				totalIncome: data.totals.income,
+				totalExpenses: data.totals.expenses,
+				percent: data.percent
+			};
+		},
 		testing: () => {
 			console.log(data);
 		}
@@ -54,7 +83,11 @@ const UIController = (() => {
 		inputType: '.add__type',
 		inputDesc: '.add__description',
 		inputValue: '.add__value',
-		inputBtn: '.add__btn'
+		inputBtn: '.add__btn',
+		budgetLbl: '.budget__value',
+		incomeLbl: '.budget__income--value',
+		expensesLbl: '.budget__expenses--value',
+		percentLbl: '.budget__expenses--percentage'
 	};
 
 	return {
@@ -62,7 +95,7 @@ const UIController = (() => {
 			return {
 				type: document.querySelector(elements.inputType).value, // Either 'income' or 'expenses'
 				desc: document.querySelector(elements.inputDesc).value,
-				value: document.querySelector(elements.inputValue).value
+				value: parseFloat(document.querySelector(elements.inputValue).value)
 			};
 		},
 		addListItem: (item, type) => {
@@ -84,6 +117,18 @@ const UIController = (() => {
 				.querySelector(`.${type}__list`)
 				.insertAdjacentHTML('beforeend', html);
 		},
+		displayBudget: obj => {
+			document.querySelector(elements.budgetLbl).textContent = obj.budget;
+			document.querySelector(elements.incomeLbl).textContent = obj.totalIncome;
+			document.querySelector(elements.expensesLbl).textContent =
+				obj.totalExpenses;
+			let percent = document.querySelector(elements.percentLbl);
+			if (obj.percent >= 0) {
+				percent.textContent = obj.percent + '%';
+			} else {
+				percent.textContent = '---';
+			}
+		},
 		getElements: () => {
 			return elements;
 		},
@@ -104,17 +149,31 @@ const UIController = (() => {
 
 // Serves as the controller of the application
 const controller = ((budgetCtrl, UICtrl) => {
+	const updateBudget = () => {
+		// 1. Recalculate the budget
+		budgetCtrl.calculateBudget();
+		// 2. Return the budget
+		const budget = budgetCtrl.getBudget();
+		// 3. Display the budget in the UI
+		UICtrl.displayBudget(budget);
+	};
 	const ctrlAddItem = () => {
 		// 1. Get field input value
 		const input = UICtrl.getInput();
+		if (input.desc === '' || isNaN(input.value) || input.value === 0) {
+			alert(
+				'Please add description and valid dollar amount before submitting.'
+			);
+			return false;
+		}
 		// 2. Add item to the budget controller
 		const newItem = budgetCtrl.addItem(input.type, input.desc, input.value);
 		// 3. Add item to the UI
 		UICtrl.addListItem(newItem, input.type);
 		// 4. Clear input fields
 		UICtrl.clearInputs();
-		// 5. Recalculate the budget
-		// 6. Display the budget in the UI
+		// 5. Calculate and update budget
+		updateBudget();
 	};
 	const setupEventListeners = () => {
 		const UIElements = UICtrl.getElements();
