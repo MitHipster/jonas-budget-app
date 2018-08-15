@@ -6,11 +6,13 @@ const budgetController = (() => {
 		this.desc = desc;
 		this.value = value;
 	};
+
 	const Income = function(id, desc, value) {
 		this.id = id;
 		this.desc = desc;
 		this.value = value;
 	};
+
 	const calculateTotal = type => {
 		let total = data.items[type].reduce((sum, item) => sum + item.value, 0);
 		data.totals[type] = total;
@@ -96,7 +98,8 @@ const UIController = (() => {
 		incomeLbl: '.budget__income--value',
 		expensesLbl: '.budget__expenses--value',
 		percentLbl: '.budget__expenses--percentage',
-		container: '.container'
+		container: '.container',
+		expenseListItems: '.expenses__list > div'
 	};
 
 	return {
@@ -140,6 +143,19 @@ const UIController = (() => {
 			} else {
 				percent.textContent = '---';
 			}
+		},
+		displayPercents: totalIncome => {
+			const listItems = document.querySelectorAll(elements.expenseListItems);
+			listItems.forEach(item => {
+				const expense = item.querySelector('.item__value');
+				const percent = item.querySelector('.item__percentage');
+				if (totalIncome > 0) {
+					percent.textContent =
+						Math.round((expense.textContent / totalIncome) * 100) + '%';
+				} else {
+					percent.textContent = '---';
+				}
+			});
 		},
 		deleteListItem: id => {
 			document.getElementById(id).remove();
@@ -191,6 +207,13 @@ const controller = ((budgetCtrl, UICtrl) => {
 		UICtrl.displayBudget(budget);
 	};
 
+	const updatePercents = () => {
+		// 1. Get total income from budget
+		const totalIncome = budgetCtrl.getBudget().totalIncome;
+		// 2. Update UI with new percentages
+		UICtrl.displayPercents(totalIncome);
+	};
+
 	const ctrlAddItem = () => {
 		// 1. Get field input value
 		const input = UICtrl.getInput();
@@ -208,6 +231,8 @@ const controller = ((budgetCtrl, UICtrl) => {
 		UICtrl.clearInputs();
 		// 5. Calculate and update budget
 		updateBudget();
+		// 6. Calculate and update percentages
+		updatePercents();
 	};
 
 	const ctrlDeleteItem = e => {
@@ -219,6 +244,8 @@ const controller = ((budgetCtrl, UICtrl) => {
 			// Delete item from budget array then recalculate and update budget
 			budgetCtrl.deleteItem(attr);
 			updateBudget();
+			// recalculate and update percentages
+			updatePercents();
 		}
 	};
 
