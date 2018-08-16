@@ -99,7 +99,8 @@ const UIController = (() => {
 		expensesLbl: '.budget__expenses--value',
 		percentLbl: '.budget__expenses--percentage',
 		container: '.container',
-		expenseListItems: '.expenses__list > div'
+		expenseListItems: '.expenses__list > div',
+		dateLbl: '.budget__title--month'
 	};
 
 	const formatNumber = num => {
@@ -177,6 +178,41 @@ const UIController = (() => {
 		getElements: () => {
 			return elements;
 		},
+		displayDate: () => {
+			const monthNames = [
+				'January',
+				'February',
+				'March',
+				'April',
+				'May',
+				'June',
+				'July',
+				'August',
+				'September',
+				'October',
+				'November',
+				'December'
+			];
+			const dateElement = document.querySelector(elements.dateLbl);
+			const date = new Date();
+			dateElement.textContent =
+				monthNames[date.getMonth()] + ' ' + date.getFullYear();
+		},
+		changedType: () => {
+			const inputs = document.querySelectorAll(
+				elements.inputType +
+					', ' +
+					elements.inputDesc +
+					', ' +
+					elements.inputValue
+			);
+
+			inputs.forEach(input => {
+				input.classList.toggle('red-focus');
+			});
+
+			document.querySelector(elements.inputBtn).classList.toggle('red');
+		},
 		clearInputs: () => {
 			// Converted node list into an array to demonstrate using the call method on the Array prototype
 			const inputs = document.querySelectorAll(
@@ -210,6 +246,10 @@ const controller = ((budgetCtrl, UICtrl) => {
 		document
 			.querySelector(UIElements.container)
 			.addEventListener('click', ctrlDeleteItem);
+
+		document
+			.querySelector(UIElements.inputType)
+			.addEventListener('change', UICtrl.changedType);
 	};
 
 	const updateBudget = () => {
@@ -266,6 +306,7 @@ const controller = ((budgetCtrl, UICtrl) => {
 	return {
 		init: () => {
 			console.log('Start');
+			UICtrl.displayDate();
 			setupEventListeners();
 		}
 	};
