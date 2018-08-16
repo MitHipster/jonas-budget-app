@@ -102,6 +102,13 @@ const UIController = (() => {
 		expenseListItems: '.expenses__list > div'
 	};
 
+	const formatNumber = num => {
+		return num.toLocaleString(undefined, {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2
+		});
+	};
+
 	return {
 		getInput: () => {
 			return {
@@ -116,7 +123,9 @@ const UIController = (() => {
 			<div class="item clearfix" id="${type}-${item.id}">
 				<div class="item__description">${item.desc}</div>
 				<div class="right clearfix">
-					<div class="item__value">${item.value}</div>
+					<div class="item__value" data-value="${item.value}">${formatNumber(
+				item.value
+			)}</div>
 					${type === 'expenses' ? '<div class="item__percentage">0%</div>' : ''}
 					<div class="item__delete">
 						<button class="item__delete--btn">
@@ -133,10 +142,15 @@ const UIController = (() => {
 				.insertAdjacentHTML('beforeend', html);
 		},
 		displayBudget: obj => {
-			document.querySelector(elements.budgetLbl).textContent = obj.budget;
-			document.querySelector(elements.incomeLbl).textContent = obj.totalIncome;
-			document.querySelector(elements.expensesLbl).textContent =
-				obj.totalExpenses;
+			document.querySelector(elements.budgetLbl).textContent = formatNumber(
+				obj.budget
+			);
+			document.querySelector(elements.incomeLbl).textContent = formatNumber(
+				obj.totalIncome
+			);
+			document.querySelector(elements.expensesLbl).textContent = formatNumber(
+				obj.totalExpenses
+			);
 			let percent = document.querySelector(elements.percentLbl);
 			if (obj.percent >= 0) {
 				percent.textContent = obj.percent + '%';
@@ -151,7 +165,7 @@ const UIController = (() => {
 				const percent = item.querySelector('.item__percentage');
 				if (totalIncome > 0) {
 					percent.textContent =
-						Math.round((expense.textContent / totalIncome) * 100) + '%';
+						Math.round((expense.dataset.value / totalIncome) * 100) + '%';
 				} else {
 					percent.textContent = '---';
 				}
